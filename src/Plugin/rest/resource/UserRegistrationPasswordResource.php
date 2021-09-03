@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
  *   label = @Translation("User registration with password"),
  *   serialization_class = "Drupal\user\Entity\User",
  *   uri_paths = {
- *     "https://www.drupal.org/link-relations/create" = "/user/register-with-password",
+ *     "create" = "/user/register-with-password",
  *   },
  * )
  */
