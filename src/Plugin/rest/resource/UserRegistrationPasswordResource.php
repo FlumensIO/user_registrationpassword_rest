@@ -24,8 +24,10 @@ class UserRegistrationPasswordResource extends UserRegistrationResource
 {
   public function post(UserInterface $account = null)
   {
-    if (!isset($account)){
-     return $this->resendVerificationEmail();
+    $request = \Drupal::request();
+    $resendVerificationEmail = $request->query->get('resendVerificationEmail');
+    if ($resendVerificationEmail) {
+      return $this->resendVerificationEmail($account);
     }
 
     $response = parent::post($account);
@@ -37,29 +39,35 @@ class UserRegistrationPasswordResource extends UserRegistrationResource
     return $response;
   }
 
-  protected function resendVerificationEmail() {
-    \Drupal::logger('user_registrationpassword_rest')->notice("Verification email reset request.");
-      
-    $request = \Drupal::request();
-    $mailParam = $request->query->get('email');
-    if (!$mailParam){
-      throw new BadRequestHttpException("If you're trying to request a verification email resend then please provide an email url param");
+  protected function resendVerificationEmail(UserInterface $account)
+  {
+    \Drupal::logger('user_registrationpassword_rest')->notice(
+      "Verification email reset request."
+    );
+
+    $mail = $account->getEmail();
+    if (!$mail) {
+      throw new BadRequestHttpException(
+        "If you're trying to request a verification email resend then please provide the email in the body"
+      );
     }
-    
-    $mail = str_replace(" ", "+", $mailParam);
+
+    $mail = str_replace(" ", "+", $mail);
     $user = user_load_by_mail($mail);
-    if (!$user){
+    if (!$user) {
       throw new BadRequestHttpException("No such user was found for {$mail}");
     }
 
-    if ($user->isActive()){
+    if ($user->isActive()) {
       throw new BadRequestHttpException("This account is already activated");
     }
 
     $this->sendEmailNotifications($user);
 
-    \Drupal::logger('user_registrationpassword_rest')->notice("Verification email reset request done.");
-    
+    \Drupal::logger('user_registrationpassword_rest')->notice(
+      "Verification email reset request done."
+    );
+
     $response = ['message' => "Verification mail was sent to {$mail}"];
     return new ResourceResponse($response);
   }
